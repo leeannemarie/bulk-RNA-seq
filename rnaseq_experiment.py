@@ -96,13 +96,6 @@ def transcripts_to_genes(input_tsv, new_csv_file_name='collapsed_tpms'):
 
     collapsed_df.to_csv(str(output_dir) + '/{}.csv'.format(new_csv_file_name))
 
-    
-def add_gene_info():
-    pass
-
-def get_STAR_metrics():
-    pass
-
 def coord_to_counts_pysam(list_coords, bam_fn):
     '''Given a set of coordinates in a list with the format [chr, start, end] and an indexed bam file, return the counts as tuples, in the form (name, counts)'''
     
