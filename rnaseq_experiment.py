@@ -96,25 +96,21 @@ def transcripts_to_genes(input_tsv, new_csv_file_name='collapsed_tpms'):
 
     collapsed_df.to_csv(str(output_dir) + '/{}.csv'.format(new_csv_file_name))
 
+def coord_to_counts_pysam(list_coords, bam_fn, min_mapq=0):
+    '''Given a set of coordinates in a list with the format [chr, start, end] and an indexed bam file, return the counts as tuples, in the form (name, counts). Default mapq threshold is zero but can be changed.'''
     
-def add_gene_info():
-    pass
+    def check_read(read):
+    #255 means uniquely mapped when using STAR as the aligner
+        return read.mapping_quality >= min_mapq
 
-def get_STAR_metrics():
-    pass
-
-def coord_to_counts_pysam(list_coords, bam_fn):
-    '''Given a set of coordinates in a list with the format [chr, start, end] and an indexed bam file, return the counts as tuples, in the form (name, counts)'''
-    
     bam_fn_path = Path(bam_fn)
     
     bam_name = bam_fn_path.name.split('.')[0]
     
-    samfile = pysam.AlignmentFile(bam_fn, 'rb')
-    
-    counts = samfile.count(list_coords[0], list_coords[1], list_coords[2])
-    
-    return bam_name, counts
+    with pysam.AlignmentFile(bam_fn, 'rb') as sam_file:
+        unique_counts = sam_file.count(list_coords[0], list_coords[1], list_coords[2], read_callback=check_read)
+
+    return bam_name, unique_counts
 
 def coords_for_pysam(db, ensembl_ID):
     '''Returns coordinates in the right order to be read by pysam: [chromosome, start, stop].'''
@@ -127,12 +123,12 @@ def coords_for_pysam(db, ensembl_ID):
     
     return coord
 
-def make_dict_counts(bam_files, list_coords, name_of_feature):
-    '''Given a list of bam files, and coordinates for a feature of interest, return a single dictionary of bam_fn: count.'''
+def make_gene_counts_dictionary (bam_files, list_coords, name_of_feature, min_mapq=0):
+    '''Given a list of bam files, and coordinates for a feature of interest, return a single dictionary of bam_fn: count. Default mapq threshold for coord_to_counts_pysam function is zero but can be changed in the args.'''
     
     name_counts = {}
     for bam_file in sorted(bam_files):
-        bam_name, counts = coord_to_counts_pysam(list_coords, bam_file)
+        bam_name, counts = coord_to_counts_pysam(list_coords, bam_file, min_mapq=min_mapq)
         name_counts[bam_name] = counts
     
     return name_counts
